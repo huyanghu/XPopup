@@ -11,6 +11,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.lxj.xpopup.animator.ShadowBgAnimator;
+import com.lxj.xpopup.enums.LayoutStatus;
 
 /**
  * Description: 根据手势拖拽子View的layout，这种类型的弹窗比较特殊，不需要额外的动画器，因为
@@ -23,6 +24,7 @@ public class PopupDrawerLayout extends FrameLayout {
         Left, Right
     }
 
+    LayoutStatus status = null;
     ViewDragHelper dragHelper;
     View child;
     Position position = Position.Left;
@@ -51,18 +53,28 @@ public class PopupDrawerLayout extends FrameLayout {
         child = getChildAt(0);
     }
 
+    boolean hasLayout = false;
+
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        if (position == Position.Left) {
-            child.layout(-child.getMeasuredWidth(), 0, 0, getMeasuredHeight());
+        if (!hasLayout) {
+            if (position == Position.Left) {
+                child.layout(-child.getMeasuredWidth(), 0, 0, getMeasuredHeight());
+            } else {
+                child.layout(getMeasuredWidth(), 0, getMeasuredWidth() + child.getMeasuredWidth(), getMeasuredHeight());
+            }
+            hasLayout = true;
         } else {
-            child.layout(getMeasuredWidth(), 0, getMeasuredWidth() + child.getMeasuredWidth(), getMeasuredHeight());
+            child.layout(child.getLeft(), child.getTop(), child.getRight(), child.getBottom());
         }
     }
 
+    boolean isIntercept = false;
+
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        return dragHelper.shouldInterceptTouchEvent(ev);
+        isIntercept = dragHelper.shouldInterceptTouchEvent(ev);
+        return isIntercept;
     }
 
     @Override
@@ -74,7 +86,7 @@ public class PopupDrawerLayout extends FrameLayout {
     ViewDragHelper.Callback callback = new ViewDragHelper.Callback() {
         @Override
         public boolean tryCaptureView(@NonNull View view, int i) {
-            return true;
+            return !dragHelper.continueSettling(true);
         }
 
         @Override
@@ -99,40 +111,49 @@ public class PopupDrawerLayout extends FrameLayout {
         public void onViewPositionChanged(@NonNull View changedView, int left, int top, int dx, int dy) {
             super.onViewPositionChanged(changedView, left, top, dx, dy);
             float fraction = 0f;
-            if(position==Position.Left){
+            if (position == Position.Left) {
                 // fraction = (now - start)*1f / (end - start)
-                fraction = (left + child.getMeasuredWidth())*1f / child.getMeasuredWidth();
-                if(left==-child.getMeasuredWidth() && listener!=null)
+                fraction = (left + child.getMeasuredWidth()) * 1f / child.getMeasuredWidth();
+                if (left == -child.getMeasuredWidth() && listener != null && status != LayoutStatus.Close) {
+                    status = LayoutStatus.Close;
                     listener.onClose();
-            }else {
-                fraction = (left - getMeasuredWidth())*1f / -child.getMeasuredWidth();
-                if(left==getMeasuredWidth() && listener!=null)
+                }
+            } else {
+                fraction = (left - getMeasuredWidth()) * 1f / -child.getMeasuredWidth();
+                if (left == getMeasuredWidth() && listener != null)
                     listener.onClose();
             }
             setBackgroundColor(bgAnimator.calculateBgColor(fraction));
+            if (listener != null) {
+                listener.onDismissing(fraction);
+                if (fraction == 1f && status != LayoutStatus.Open) {
+                    status = LayoutStatus.Open;
+                    listener.onOpen();
+                }
+            }
         }
 
         @Override
         public void onViewReleased(@NonNull View releasedChild, float xvel, float yvel) {
             super.onViewReleased(releasedChild, xvel, yvel);
             int centerLeft = 0;
+            int finalLeft = 0;
             if (position == Position.Left) {
-                if(xvel < -1000){
-                    dragHelper.smoothSlideViewTo(releasedChild, -child.getMeasuredWidth(), releasedChild.getTop());
-                }else {
+                if (xvel < -1000) {
+                    finalLeft = -child.getMeasuredWidth();
+                } else {
                     centerLeft = -child.getMeasuredWidth() / 2;
-                    int finalLeft = releasedChild.getLeft() < centerLeft ? -child.getMeasuredWidth() : 0;
-                    dragHelper.smoothSlideViewTo(releasedChild, finalLeft, releasedChild.getTop());
+                    finalLeft = child.getLeft() < centerLeft ? -child.getMeasuredWidth() : 0;
                 }
             } else {
-                if(xvel > 1000){
-                    dragHelper.smoothSlideViewTo(releasedChild, getMeasuredWidth(), releasedChild.getTop());
-                }else {
-                    centerLeft = getMeasuredWidth() + child.getMeasuredWidth() / 2;
-                    int finalLeft = releasedChild.getLeft() < centerLeft ? getMeasuredWidth() : getMeasuredWidth() + child.getMeasuredWidth();
-                    dragHelper.smoothSlideViewTo(releasedChild, finalLeft, releasedChild.getTop());
+                if (xvel > 1000) {
+                    finalLeft = getMeasuredWidth();
+                } else {
+                    centerLeft = getMeasuredWidth() - child.getMeasuredWidth() / 2;
+                    finalLeft = releasedChild.getLeft() < centerLeft ? getMeasuredWidth() - child.getMeasuredWidth() : getMeasuredWidth();
                 }
             }
+            dragHelper.smoothSlideViewTo(releasedChild, finalLeft, releasedChild.getTop());
             ViewCompat.postInvalidateOnAnimation(PopupDrawerLayout.this);
         }
     };
@@ -143,6 +164,12 @@ public class PopupDrawerLayout extends FrameLayout {
         if (dragHelper.continueSettling(true)) {
             ViewCompat.postInvalidateOnAnimation(this);
         }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        status = null;
     }
 
     /**
@@ -172,10 +199,21 @@ public class PopupDrawerLayout extends FrameLayout {
     }
 
     private OnCloseListener listener;
-    public void setOnCloseListener(OnCloseListener listener){
+
+    public void setOnCloseListener(OnCloseListener listener) {
         this.listener = listener;
     }
-    public interface OnCloseListener{
+
+    public interface OnCloseListener {
         void onClose();
+
+        void onOpen();
+
+        /**
+         * 关闭过程中执行
+         *
+         * @param fraction 关闭的百分比
+         */
+        void onDismissing(float fraction);
     }
 }

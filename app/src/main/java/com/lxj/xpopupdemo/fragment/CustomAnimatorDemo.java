@@ -2,16 +2,9 @@ package com.lxj.xpopupdemo.fragment;
 
 import android.support.v4.view.animation.FastOutSlowInInterpolator;
 import android.view.View;
-import android.view.animation.OvershootInterpolator;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
 
 import com.lxj.xpopup.XPopup;
 import com.lxj.xpopup.animator.PopupAnimator;
-import com.lxj.xpopup.enums.PopupAnimation;
-import com.lxj.xpopup.enums.PopupType;
-import com.lxj.xpopup.util.Utils;
 import com.lxj.xpopupdemo.R;
 
 /**
@@ -45,6 +38,7 @@ public class CustomAnimatorDemo extends BaseFragment {
     static class RotateAnimator extends PopupAnimator{
         @Override
         public void initAnimator() {
+//            animateDuration = 1000;
             targetView.setScaleX(0);
             targetView.setScaleY(0);
             targetView.setAlpha(0);

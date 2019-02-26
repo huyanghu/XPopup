@@ -3,48 +3,39 @@ package com.lxj.xpopup.impl;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-import android.text.TextUtils;
 import android.view.View;
-import android.widget.TextView;
 
 import com.lxj.easyadapter.CommonAdapter;
 import com.lxj.easyadapter.MultiItemTypeAdapter;
 import com.lxj.easyadapter.ViewHolder;
 import com.lxj.xpopup.R;
-import com.lxj.xpopup.core.BottomPopupView;
+import com.lxj.xpopup.core.AttachPopupView;
 import com.lxj.xpopup.interfaces.OnSelectListener;
 
 import java.util.Arrays;
 
 /**
- * Description: 在中间的列表对话框
- * Create by dance, at 2018/12/16
+ * Description: Attach类型的列表弹窗
+ * Create by dance, at 2018/12/12
  */
-public class ListBottomPopupView extends BottomPopupView {
+public class AttachListPopupView extends AttachPopupView {
     RecyclerView recyclerView;
-    TextView tv_title;
-    public ListBottomPopupView(@NonNull Context context) {
+
+    public AttachListPopupView(@NonNull Context context) {
         super(context);
     }
 
+
     @Override
     protected int getImplLayoutId() {
-        return R.layout._xpopup_center_impl_list;
+        return R.layout._xpopup_attach_impl_list;
     }
 
     @Override
     protected void initPopupContent() {
         super.initPopupContent();
         recyclerView = findViewById(R.id.recyclerView);
-        tv_title = findViewById(R.id.tv_title);
-
-        if(TextUtils.isEmpty(title)){
-            tv_title.setVisibility(GONE);
-        }else {
-            tv_title.setText(title);
-        }
-
-        final CommonAdapter<String> adapter = new CommonAdapter<String>(R.layout._xpopup_adapter_text, Arrays.asList(datas)) {
+        final CommonAdapter<String> adapter = new CommonAdapter<String>(R.layout._xpopup_adapter_text, Arrays.asList(data)) {
             @Override
             protected void convert(@NonNull ViewHolder holder, @NonNull String s, int position) {
                 holder.setText(R.id.tv_text, s);
@@ -62,26 +53,30 @@ public class ListBottomPopupView extends BottomPopupView {
                 if (selectListener != null) {
                     selectListener.onSelect(position, adapter.getDatas().get(position));
                 }
-                dismiss();
+                if(popupInfo.autoDismiss)dismiss();
             }
         });
         recyclerView.setAdapter(adapter);
     }
 
-    String title;
-    String[] datas;
+    String[] data;
     int[] iconIds;
-    public void setStringData(String title, String[] datas, int[] iconIds) {
-        this.title = title;
-        this.datas = datas;
+    public AttachListPopupView setStringData(String[] data, int[] iconIds) {
+        this.data = data;
         this.iconIds = iconIds;
+        return this;
+    }
+
+    public AttachListPopupView setOffsetXAndY(int offsetX, int offsetY) {
+        this.defaultOffsetX += offsetX;
+        this.defaultOffsetY += offsetY;
+        return this;
     }
 
     private OnSelectListener selectListener;
 
-    public void setOnSelectListener(OnSelectListener selectListener) {
+    public AttachListPopupView setOnSelectListener(OnSelectListener selectListener) {
         this.selectListener = selectListener;
+        return this;
     }
-
-
 }

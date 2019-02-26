@@ -1,4 +1,4 @@
-package com.lxj.xpopupdemo.fragment;
+package com.lxj.xpopupdemo.custom;
 
 import android.content.Context;
 import android.support.annotation.NonNull;

@@ -50,8 +50,8 @@ public class ConfirmPopupView extends CenterPopupView implements View.OnClickLis
     }
 
     protected void applyPrimaryColor(){
-        tv_cancel.setTextColor(XPopup.get(getContext()).getPrimaryColor());
-        tv_confirm.setTextColor(XPopup.get(getContext()).getPrimaryColor());
+        tv_cancel.setTextColor(XPopup.getPrimaryColor());
+        tv_confirm.setTextColor(XPopup.getPrimaryColor());
     }
 
     OnCancelListener cancelListener;
@@ -70,9 +70,10 @@ public class ConfirmPopupView extends CenterPopupView implements View.OnClickLis
     public void onClick(View v) {
         if(v==tv_cancel){
             if(cancelListener!=null)cancelListener.onCancel();
+            dismiss();
         }else if(v==tv_confirm){
             if(confirmListener!=null)confirmListener.onConfirm();
+            if(popupInfo.autoDismiss)dismiss();
         }
-        dismiss();
     }
 }

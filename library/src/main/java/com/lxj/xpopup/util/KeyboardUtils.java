@@ -1,11 +1,14 @@
 package com.lxj.xpopup.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Rect;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
 /**
@@ -43,8 +46,7 @@ public final class KeyboardUtils {
      * @param activity The activity.
      * @param listener The soft input changed listener.
      */
-    public static void registerSoftInputChangedListener(final Activity activity,
-                                                        final OnSoftInputChangedListener listener) {
+    public static void registerSoftInputChangedListener(final Activity activity, final OnSoftInputChangedListener listener) {
         final int flags = activity.getWindow().getAttributes().flags;
         if ((flags & WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS) != 0) {
             activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
@@ -68,6 +70,13 @@ public final class KeyboardUtils {
                 .addOnGlobalLayoutListener(onGlobalLayoutListener);
     }
 
+    public static void removeLayoutChangeListener(View decorView){
+        View contentView = decorView.findViewById(android.R.id.content);
+        contentView.getViewTreeObserver().removeGlobalOnLayoutListener(onGlobalLayoutListener);
+        onGlobalLayoutListener = null;
+        onSoftInputChangedListener = null;
+    }
+
     private static int getNavBarHeight() {
         Resources res = Resources.getSystem();
         int resourceId = res.getIdentifier("navigation_bar_height", "dimen", "android");
@@ -76,6 +85,16 @@ public final class KeyboardUtils {
         } else {
             return 0;
         }
+    }
+
+    public static void showSoftInput(View view) {
+        InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.showSoftInput(view, InputMethodManager.SHOW_FORCED);
+    }
+
+    public static void hideSoftInput(View view) {
+        InputMethodManager imm = (InputMethodManager) view.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
     public interface OnSoftInputChangedListener {
